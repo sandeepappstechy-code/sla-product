@@ -125,7 +125,22 @@ async def create_project(project: Project):
     save_db(_db)
     return project
 
-# 2. Requirement Studio (Multi-part support for Files)
+# 2. Requirement Parsing (Simple JSON for Bridge)
+@app.post("/parse-requirements", response_model=RequirementStudioResponse)
+async def parse_requirements_json(payload: Dict[str, str] = Body(...)) -> RequirementStudioResponse:
+    """
+    Direct bridge for Laravel AgnoAuditBridgeService.
+    """
+    brd_text = payload.get("brd_text")
+    if not brd_text:
+        raise HTTPException(status_code=400, detail="brd_text is required")
+    
+    try:
+        return _parser_agent.parse(brd_text)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# 3. Requirement Studio (Multi-part support for Files)
 @app.post("/requirements/ingest", response_model=RequirementStudioResponse)
 async def parse_requirements(
     project_uuid: str = Form(...),
@@ -157,7 +172,7 @@ async def parse_requirements(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Parser error: {str(e)}")
 
-# 3. Audit Engine
+# 4. Audit Engine
 @app.post("/audit", response_model=AuditResult)
 async def audit(request: AuditRequest) -> AuditResult:
     try:
