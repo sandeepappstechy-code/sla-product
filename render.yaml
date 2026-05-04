@@ -58,7 +58,9 @@ services:
   # 3. The Frontend (Static Site)
   - type: static
     name: sla-frontend
-    staticPublishDir: frontend
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    publishDir: frontend/dist
     envVars:
       - key: SLA_BACKEND_URL
         fromService:
