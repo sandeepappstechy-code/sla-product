@@ -47,7 +47,7 @@ def load_db():
         with open(DB_FILE, "r") as f:
             try:
                 return json.load(f)
-            except:
+            except Exception:
                 pass
     return {"projects": [], "drifts": [], "requirements": {}}
 
@@ -106,7 +106,7 @@ class Project(BaseModel):
 
 class WebhookIngest(BaseModel):
     execution_log: str
-    metadata: Optional[dict] = {}
+    metadata: Optional[dict] = Field(default_factory=dict)
 
 # --- Routes ---
 
