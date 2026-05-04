@@ -18,6 +18,7 @@ services:
     env: docker
     rootDir: backend
     plan: free
+    preDeployCommand: php artisan migrate --force
     envVars:
       - key: APP_KEY
         generateValue: true
@@ -55,7 +56,8 @@ services:
           property: password
 
   # 3. The Frontend (Static Site)
-  - type: static_site
+  - type: web
+    env: static
     name: sla-frontend
     publishDir: frontend
     envVars:
