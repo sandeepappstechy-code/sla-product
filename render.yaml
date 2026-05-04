@@ -1,15 +1,5 @@
 services:
-  # 1. The Frontend (Static Site)
-  - type: static
-    name: sla-frontend
-    buildCommand: ""
-    staticPublishDir: frontend
-    routes:
-      - type: rewrite
-        source: /(.*)
-        destination: /index.html
-
-  # 2. The AI Engine (Python/FastAPI)
+  # 1. The AI Engine (Python/FastAPI)
   - type: web
     name: sla-agno-engine
     env: python
@@ -18,9 +8,9 @@ services:
     startCommand: uvicorn agno_api:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: OPENAI_API_KEY
-        sync: false # You will need to add this in the Render Dashboard
+        sync: false
 
-  # 3. The Backend (Laravel/PHP)
+  # 2. The Backend (Laravel/PHP)
   - type: web
     name: sla-backend
     env: php
@@ -34,3 +24,13 @@ services:
         fromService:
           name: sla-agno-engine
           type: host
+
+staticSites:
+  # 3. The Frontend (Static Dashboard)
+  - name: sla-frontend
+    buildCommand: ""
+    publishDir: frontend
+    routes:
+      - type: rewrite
+        source: /(.*)
+        destination: /index.html
