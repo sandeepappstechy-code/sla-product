@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+vendor/
+venv/
+.venv/
+env/
+.env/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Build / Temporary
+dist/
+build/
+*.log
+*.sqlite
+.phpunit.result.cache
+storage/*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Laravel
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/testing/*
+storage/framework/views/*
+bootstrap/cache/*

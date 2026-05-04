@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sentinel Logic Auditor — Dashboard</title>
+  <meta name="description" content="AI Agent Logic Auditing Platform — detect semantic drift between BRDs and live agent executions." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
+  <!-- ── MOBILE HEADER ────────────────────────────────────────────── -->
+  <header class="mobile-header">
+    <div class="sidebar-brand">
+      <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+      <div class="brand-name">Sentinel</div>
+    </div>
+    <button class="mobile-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+  </header>
+
+  <!-- ═══ SIDEBAR ════════════════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+      <div>
+        <div class="brand-name">Sentinel</div>
+        <div class="brand-sub">Logic Auditor</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">Monitoring</div>
+      <a href="#" class="nav-item active" data-view="dashboard" onclick="showView('dashboard',this)">
+        <span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span> Drift Dashboard
+      </a>
+      <a href="#" class="nav-item" data-view="logic-map" onclick="showView('logic-map',this)">
+        <span class="nav-icon"><i class="fa-solid fa-diagram-project"></i></span> Logic Map
+      </a>
+      <a href="#" class="nav-item" data-view="drifts" onclick="showView('drifts',this)">
+        <span class="nav-icon"><i class="fa-solid fa-triangle-exclamation"></i></span> Drift Alerts
+      </a>
+      <a href="#" class="nav-item" data-view="analytics" onclick="showView('analytics',this)">
+        <span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span> Analytics
+      </a>
+      <div class="nav-group-label" style="margin-top:10px">Authoring</div>
+      <a href="#" class="nav-item" data-view="studio" onclick="showView('studio',this)">
+        <span class="nav-icon"><i class="fa-solid fa-book-open-reader"></i></span> Req. Studio
+      </a>
+      <a href="#" class="nav-item" data-view="remediation" onclick="showView('remediation',this)">
+        <span class="nav-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></span> Remediation
+      </a>
+      <a href="#" class="nav-item" data-view="marp" onclick="showView('marp',this)">
+        <span class="nav-icon"><i class="fa-solid fa-person-chalkboard"></i></span> Marp Previewer
+      </a>
+      <div class="nav-group-label" style="margin-top:10px">System</div>
+      <a href="#" class="nav-item" data-view="settings" onclick="showView('settings',this)">
+        <span class="nav-icon"><i class="fa-solid fa-gear"></i></span> Settings
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="status-dot"></div>
+      <span>Engine Online</span>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ════════════════════════════════════════════════════════ -->
+  <main class="main-content">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="page-title" id="page-title">Drift Dashboard</h1>
+        <span class="page-sub" id="page-sub">Last sync: 2 minutes ago</span>
+      </div>
+      <div class="topbar-right">
+        <div class="sync-badge">
+          <span class="pulse"></span> Live Audit Feed
+        </div>
+        <button class="btn-ghost" onclick="toggleTheme()" title="Toggle Theme" id="theme-toggle-btn">
+          <i class="fa-solid fa-sun"></i>
+        </button>
+        <button class="btn-primary" onclick="simulateAudit()"><i class="fa-solid fa-play"></i> Run Audit</button>
+      </div>
+    </header>
+
+    <!-- ─── VIEW: DASHBOARD ─────────────────────────────────────────── -->
+    <section class="view active" id="view-dashboard">
+
+      <!-- KPI Row -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Alignment Score</div>
+          <div class="kpi-value score-good" id="kpi-score">87.4%</div>
+          <div class="kpi-delta positive"><i class="fa-solid fa-arrow-trend-up"></i> 2.1% vs yesterday</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Total Executions</div>
+          <div class="kpi-value" id="kpi-executions">1,284</div>
+          <div class="kpi-delta positive"><i class="fa-solid fa-arrow-up"></i> 143 today</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Logic Drifts</div>
+          <div class="kpi-value score-warn" id="kpi-drifts">38</div>
+          <div class="kpi-delta negative"><i class="fa-solid fa-arrow-up"></i> 5 new</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Critical Violations</div>
+          <div class="kpi-value score-danger" id="kpi-critical">4</div>
+          <div class="kpi-delta negative"><i class="fa-solid fa-arrow-up"></i> 1 new</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Avg Audit Latency</div>
+          <div class="kpi-value" id="kpi-latency">1.8s</div>
+          <div class="kpi-delta positive"><i class="fa-solid fa-arrow-trend-down"></i> 0.3s</div>
+        </div>
+      </div>
+
+      <!-- Projects Table -->
+      <div class="section-header">
+        <h2 class="section-title">Project Alignment</h2>
+        <span class="section-badge" id="project-count">5 projects</span>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Project</th><th>Tool</th><th>Alignment</th><th>Score</th><th>Critical</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="projects-tbody">
+            <!-- injected by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Recent Drifts -->
+      <div class="section-header" style="margin-top:32px">
+        <h2 class="section-title">Recent Drift Alerts</h2>
+      </div>
+      <div class="drift-feed" id="drift-feed">
+        <!-- injected by JS -->
+      </div>
+
+    </section>
+
+    <!-- ─── VIEW: LOGIC MAP ──────────────────────────────────────────── -->
+    <section class="view" id="view-logic-map">
+      <div class="logic-map-wrapper">
+        <div class="logic-col">
+          <div class="logic-col-header brd-header">
+            <i class="fa-solid fa-clipboard-list"></i> BRD Requirements
+            <span class="badge-blue">Source of Truth</span>
+          </div>
+          <div class="logic-col-body" id="brd-nodes">
+            <!-- injected by JS -->
+          </div>
+        </div>
+        <div class="logic-connector-col" id="connector-col">
+          <!-- SVG connectors injected by JS -->
+        </div>
+        <div class="logic-col">
+          <div class="logic-col-header agent-header">
+            <i class="fa-solid fa-robot"></i> Agent Execution Path
+            <span class="badge-purple">n8n · Run #1284</span>
+          </div>
+          <div class="logic-col-body" id="agent-nodes">
+            <!-- injected by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── VIEW: MARP PREVIEWER ─────────────────────────────────────── -->
+    <section class="view" id="view-marp">
+      <div class="marp-layout">
+        <div class="marp-editor-pane">
+          <div class="pane-header">
+            <i class="fa-solid fa-pen-to-square"></i> Markdown Editor
+            <button class="btn-ghost" onclick="renderMarp()"><i class="fa-solid fa-rotate-right"></i> Render</button>
+          </div>
+          <textarea class="marp-editor" id="marp-editor" spellcheck="false"></textarea>
+        </div>
+        <div class="marp-preview-pane">
+          <div class="pane-header">
+            <i class="fa-solid fa-display"></i> Slide Preview
+            <span class="slide-counter" id="slide-counter">Slide 1 / 1</span>
+          </div>
+          <div class="marp-slide" id="marp-slide"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── VIEW: DRIFT ALERTS ────────────────────────────────────────── -->
+    <section class="view" id="view-drifts">
+      <div class="drift-filter-bar">
+        <button class="filter-btn active" onclick="filterDrifts('all',this)"><i class="fa-solid fa-list"></i> All</button>
+        <button class="filter-btn" onclick="filterDrifts('critical',this)"><i class="fa-solid fa-circle-xmark" style="color:var(--red)"></i> Critical</button>
+        <button class="filter-btn" onclick="filterDrifts('high',this)"><i class="fa-solid fa-circle-exclamation" style="color:var(--amber)"></i> High</button>
+        <button class="filter-btn" onclick="filterDrifts('medium',this)"><i class="fa-solid fa-circle-dot" style="color:var(--blue)"></i> Medium</button>
+      </div>
+      <div class="drift-cards-grid" id="drift-cards-grid">
+        <!-- injected by JS -->
+      </div>
+    </section>
+
+
+    <!-- ─── VIEW: REQUIREMENT STUDIO ───────────────────────────────── -->
+    <section class="view" id="view-studio">
+      
+      <!-- Project Selection & Actions -->
+      <div class="studio-header">
+        <div class="form-group" style="margin-bottom:0; flex:1">
+          <label class="form-label"><i class="fa-solid fa-folder-open"></i> Active Project</label>
+          <select class="form-select" id="studio-project-select">
+            <option value="c7f3a2b1-d4e5-4f6a-8b0c-d1e2f3a4b5c6">KYC Verification Agent</option>
+            <option value="a1b2c3d4-e5f6-7890-abcd-ef1234567890">Customer Onboarding Flow</option>
+            <option value="b2c3d4e5-f6a7-8901-bcde-f12345678901">Fraud Detection Pipeline</option>
+          </select>
+        </div>
+        <button class="btn-primary" onclick="lockAllRequirements()"><i class="fa-solid fa-lock"></i> Lock All &amp; Activate</button>
+      </div>
+
+      <!-- Drop Zone -->
+      <div class="drop-zone" id="drop-zone" ondragover="event.preventDefault()" ondrop="handleDrop(event)" onclick="document.getElementById('brd-file-input').click()">
+        <div class="drop-zone-inner">
+          <div class="drop-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+          <div class="drop-title">Drop your BRD here</div>
+          <div class="drop-sub">PDF · DOCX · Markdown · TXT &nbsp;—&nbsp; or click to browse</div>
+          <div class="drop-formats">
+            <span class="fmt-badge"><i class="fa-solid fa-file-pdf"></i> PDF</span>
+            <span class="fmt-badge"><i class="fa-solid fa-file-word"></i> DOCX</span>
+            <span class="fmt-badge"><i class="fa-brands fa-markdown"></i> MD</span>
+            <span class="fmt-badge"><i class="fa-solid fa-file-lines"></i> TXT</span>
+          </div>
+        </div>
+        <input type="file" id="brd-file-input" accept=".pdf,.docx,.md,.txt" style="display:none" onchange="handleFileSelect(this)" />
+      </div>
+      <!-- Remove File Button (shown only after a file is loaded) -->
+      <div id="brd-file-actions" style="display:none; margin-top:-16px; margin-bottom:16px; display:none;">
+        <button class="btn-remove-file" id="btn-remove-brd" onclick="removeBRDFile(event)">
+          <i class="fa-solid fa-xmark"></i> Remove File
+        </button>
+      </div>
+
+      <!-- Parsing Workspace -->
+      <div class="studio-parse-grid" id="studio-parse-grid" style="display:none">
+        <!-- Left: Raw / Source -->
+        <div class="parse-pane">
+          <div class="pane-header">
+            <i class="fa-solid fa-file-lines"></i> Raw BRD Content
+            <span class="parse-status-badge" id="parse-status-badge"><i class="fa-solid fa-spinner fa-spin"></i> Parsing…</span>
+          </div>
+          <div class="parse-raw-content" id="parse-raw-content"></div>
+        </div>
+        <!-- Right: Extracted Requirements -->
+        <div class="parse-pane">
+          <div class="pane-header">
+            <i class="fa-solid fa-list-check"></i> Extracted Requirements
+            <span id="req-count-badge" class="section-badge">0 found</span>
+          </div>
+          <div class="req-node-list" id="req-node-list"></div>
+        </div>
+      </div>
+
+      <!-- Agent Linking Panel -->
+      <div class="agent-linking-panel" id="agent-linking-panel">
+        <div class="panel-header">
+          <i class="fa-solid fa-link"></i> Agent Linking
+          <span class="section-badge">Developer Handoff</span>
+        </div>
+        <div class="linking-grid">
+          <div class="link-field-group">
+            <label class="form-label"><i class="fa-solid fa-webhook" style="color:var(--blue)"></i>&nbsp; Webhook Endpoint (n8n / Agno)</label>
+            <div class="copy-row">
+              <input class="form-input mono" id="webhook-url" readonly value="https://sla.app/api/webhooks/kyc-agent-7f3a/n8n" />
+              <button class="btn-copy" onclick="copyField('webhook-url')"><i class="fa-solid fa-copy"></i></button>
+            </div>
+          </div>
+          <div class="link-field-group">
+            <label class="form-label"><i class="fa-solid fa-key" style="color:var(--amber)"></i>&nbsp; API Key (HMAC Secret)</label>
+            <div class="copy-row">
+              <input class="form-input mono" id="api-key" readonly value="sk_sla_••••••••••••••••••••••••••••••" type="password" />
+              <button class="btn-copy" onclick="toggleApiKey()"><i class="fa-solid fa-eye" id="api-key-eye"></i></button>
+              <button class="btn-copy" onclick="copyField('api-key')"><i class="fa-solid fa-copy"></i></button>
+            </div>
+          </div>
+          <div class="link-field-group">
+            <label class="form-label"><i class="fa-solid fa-circle-info" style="color:var(--cyan)"></i>&nbsp; Quick-start snippet</label>
+            <pre class="code-snippet" id="quickstart-snippet">// n8n HTTP Request Node
+Method: POST
+URL:    https://sla.app/api/webhooks/kyc-agent-7f3a/n8n
+Header: X-SLA-Signature: sha256={{$hmac(body, apiKey)}}
+Body:   {{ $json }}</pre>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ─── VIEW: REMEDIATION EXPORT ─────────────────────────────────── -->
+    <section class="view" id="view-remediation">
+      <div class="rem-layout">
+        <!-- Left: Drift queue -->
+        <div class="rem-queue">
+          <div class="rem-queue-header">
+            <span><i class="fa-solid fa-list-check"></i> Open Drifts</span>
+            <span class="section-badge" id="rem-open-count">5 open</span>
+          </div>
+          <div class="rem-drift-list" id="rem-drift-list"></div>
+        </div>
+        <!-- Right: Export panel -->
+        <div class="rem-export-panel" id="rem-export-panel">
+          <div class="rem-export-placeholder" id="rem-export-placeholder">
+            <i class="fa-solid fa-arrow-pointer" style="font-size:32px;color:var(--text-3)"></i>
+            <p>Select a drift from the left to generate a fix export</p>
+          </div>
+          <div class="rem-export-content" id="rem-export-content" style="display:none">
+            <div class="pane-header">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <span id="rem-export-title">Export Fix</span>
+            </div>
+            <div class="rem-export-tabs">
+              <button class="rem-tab active" onclick="switchRemTab('n8n',this)"><i class="fa-solid fa-diagram-project"></i> n8n Node</button>
+              <button class="rem-tab" onclick="switchRemTab('agno',this)"><i class="fa-solid fa-robot"></i> Agno Patch</button>
+              <button class="rem-tab" onclick="switchRemTab('pr',this)"><i class="fa-brands fa-github"></i> PR Description</button>
+            </div>
+            <pre class="rem-code-block" id="rem-code-block"></pre>
+            <div class="rem-actions">
+              <button class="btn-primary" onclick="copyRemCode()"><i class="fa-solid fa-copy"></i> Copy to Clipboard</button>
+              <button class="btn-ghost" onclick="downloadRemCode()"><i class="fa-solid fa-download"></i> Download File</button>
+              <button class="btn-ghost" style="color:var(--cyan);border-color:rgba(63,185,80,0.3)" onclick="markResolved()"><i class="fa-solid fa-circle-check"></i> Mark Resolved</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── VIEW: ANALYTICS ──────────────────────────────────────────── -->
+    <section class="view" id="view-analytics">
+
+      <div class="analytics-kpi-row" id="analytics-kpi-row"></div>
+
+      <div class="analytics-main-grid">
+        <!-- Trend Chart -->
+        <div class="card analytics-chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="section-title"><i class="fa-solid fa-chart-line" style="color:var(--blue)"></i> Alignment Score — 30 Day Trend</div>
+              <div style="font-size:12px;color:var(--text-3);margin-top:4px">All projects combined · Daily average</div>
+            </div>
+            <div class="chart-legend" id="chart-legend"></div>
+          </div>
+          <svg id="trend-chart" width="100%" height="260" style="display:block"></svg>
+        </div>
+
+        <!-- Drift Breakdown -->
+        <div class="card analytics-breakdown-card">
+          <div class="chart-card-header">
+            <div class="section-title"><i class="fa-solid fa-chart-bar" style="color:var(--purple)"></i> Drift Type Breakdown</div>
+          </div>
+          <div class="breakdown-bars" id="breakdown-bars"></div>
+        </div>
+      </div>
+
+      <!-- Per-project sparklines -->
+      <div class="section-header" style="margin-top:28px">
+        <h2 class="section-title">Project Trends</h2>
+        <span class="section-badge">Last 30 days</span>
+      </div>
+      <div class="sparkline-grid" id="sparkline-grid"></div>
+
+    </section>
+
+    <!-- ─── VIEW: SETTINGS ───────────────────────────────────────────── -->
+    <section class="view" id="view-settings">
+      <div class="settings-grid">
+
+        <!-- Appearance -->
+        <div class="settings-card" style="grid-column: 1 / -1">
+          <div class="settings-card-header">
+            <i class="fa-solid fa-palette" style="color:var(--purple)"></i>
+            <div>
+              <div class="settings-card-title">Appearance</div>
+              <div class="settings-card-sub">Customize the look and feel of Sentinel</div>
+            </div>
+          </div>
+          <div class="settings-body" style="flex-direction: row; align-items: center; justify-content: space-between;">
+            <div class="channel-info">
+              <div class="channel-name">Light Theme</div>
+              <div class="channel-sub">Switch to a high-contrast white aesthetic</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="theme-toggle-checkbox" onchange="toggleTheme()" />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Notification Channels -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <i class="fa-solid fa-bell" style="color:var(--amber)"></i>
+            <div>
+              <div class="settings-card-title">Notification Channels</div>
+              <div class="settings-card-sub">Push critical alerts to your team in real-time</div>
+            </div>
+          </div>
+          <div class="settings-body">
+            <div class="settings-channel">
+              <div class="channel-logo slack"><i class="fa-brands fa-slack"></i></div>
+              <div class="channel-info">
+                <div class="channel-name">Slack</div>
+                <div class="channel-sub">Post to a channel on critical violations</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="slack-toggle" checked />
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+            <div class="settings-field-group" id="slack-config">
+              <label class="form-label">Incoming Webhook URL</label>
+              <div class="copy-row">
+                <input class="form-input" id="slack-webhook" placeholder="https://hooks.slack.com/services/…" value="https://hooks.slack.com/services/T00000000/B00000000/XXXX" />
+                <button class="btn-copy" onclick="testNotification('slack')"><i class="fa-solid fa-paper-plane"></i></button>
+              </div>
+              <label class="form-label" style="margin-top:12px">Alert on severity</label>
+              <div class="checkbox-row">
+                <label class="cb-label"><input type="checkbox" checked /> <span class="badge badge-red">Critical</span></label>
+                <label class="cb-label"><input type="checkbox" checked /> <span class="badge badge-amber">High</span></label>
+                <label class="cb-label"><input type="checkbox" /> <span class="badge badge-blue">Medium</span></label>
+              </div>
+            </div>
+            <div class="settings-divider"></div>
+            <div class="settings-channel">
+              <div class="channel-logo teams"><i class="fa-brands fa-microsoft"></i></div>
+              <div class="channel-info">
+                <div class="channel-name">Microsoft Teams</div>
+                <div class="channel-sub">Post adaptive cards to a Teams channel</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="teams-toggle" />
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+            <div class="settings-field-group" id="teams-config" style="opacity:0.4;pointer-events:none">
+              <label class="form-label">Teams Webhook URL</label>
+              <div class="copy-row">
+                <input class="form-input" placeholder="https://outlook.office.com/webhook/…" />
+                <button class="btn-copy"><i class="fa-solid fa-paper-plane"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audit Thresholds -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <i class="fa-solid fa-sliders" style="color:var(--blue)"></i>
+            <div>
+              <div class="settings-card-title">Audit Thresholds</div>
+              <div class="settings-card-sub">Control when alerts are triggered</div>
+            </div>
+          </div>
+          <div class="settings-body">
+            <div class="threshold-row">
+              <div class="threshold-label">
+                <span>Minimum Alignment Score</span>
+                <span class="threshold-value" id="threshold-score-val">80%</span>
+              </div>
+              <input type="range" class="range-slider" min="50" max="100" value="80" id="threshold-score"
+                oninput="document.getElementById('threshold-score-val').textContent=this.value+'%'" />
+            </div>
+            <div class="threshold-row">
+              <div class="threshold-label">
+                <span>Similarity Score Alert Below</span>
+                <span class="threshold-value" id="threshold-sim-val">30%</span>
+              </div>
+              <input type="range" class="range-slider" min="0" max="100" value="30" id="threshold-sim"
+                oninput="document.getElementById('threshold-sim-val').textContent=this.value+'%'" />
+            </div>
+            <div class="threshold-row">
+              <div class="threshold-label">
+                <span>Auto-escalate after (hours)</span>
+                <span class="threshold-value" id="threshold-esc-val">4h</span>
+              </div>
+              <input type="range" class="range-slider" min="1" max="24" value="4" id="threshold-esc"
+                oninput="document.getElementById('threshold-esc-val').textContent=this.value+'h'" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Engine Config -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <i class="fa-solid fa-microchip" style="color:var(--cyan)"></i>
+            <div>
+              <div class="settings-card-title">Agno Engine Config</div>
+              <div class="settings-card-sub">LLM model and performance settings</div>
+            </div>
+          </div>
+          <div class="settings-body">
+            <label class="form-label">LLM Model</label>
+            <select class="form-select">
+              <option selected>gpt-4o (Recommended)</option>
+              <option>gpt-4o-mini (Fast)</option>
+              <option>claude-3-5-sonnet</option>
+            </select>
+            <label class="form-label" style="margin-top:14px">Audit Queue</label>
+            <select class="form-select">
+              <option>audits (default)</option>
+              <option>audits-priority</option>
+            </select>
+            <div class="engine-status-row">
+              <div class="engine-stat">
+                <div class="engine-stat-val score-good">Online</div>
+                <div class="engine-stat-label">Engine Status</div>
+              </div>
+              <div class="engine-stat">
+                <div class="engine-stat-val">1.8s</div>
+                <div class="engine-stat-label">Avg Latency</div>
+              </div>
+              <div class="engine-stat">
+                <div class="engine-stat-val">127</div>
+                <div class="engine-stat-label">Queue Depth</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save row -->
+        <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:12px;padding-top:4px">
+          <button class="btn-ghost"><i class="fa-solid fa-rotate-left"></i> Reset Defaults</button>
+          <button class="btn-primary" onclick="saveSettings()"><i class="fa-solid fa-floppy-disk"></i> Save Settings</button>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── EXPORT MODAL ─────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="export-modal" onclick="closeExportModal(event)">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--purple)"></i> Export Fix</span>
+        <button class="modal-close" onclick="closeExportModal(null,true)"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-tabs">
+        <button class="rem-tab active" onclick="switchModalTab('n8n',this)"><i class="fa-solid fa-diagram-project"></i> n8n Node</button>
+        <button class="rem-tab" onclick="switchModalTab('agno',this)"><i class="fa-solid fa-robot"></i> Agno Patch</button>
+        <button class="rem-tab" onclick="switchModalTab('pr',this)"><i class="fa-brands fa-github"></i> PR Description</button>
+      </div>
+      <pre class="rem-code-block" id="modal-code-block" style="max-height:340px"></pre>
+      <div class="rem-actions">
+        <button class="btn-primary" onclick="copyModalCode()"><i class="fa-solid fa-copy"></i> Copy</button>
+        <button class="btn-ghost" onclick="closeExportModal(null,true)"><i class="fa-solid fa-xmark"></i> Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── EDIT REQUIREMENT MODAL ────────────────────────────────────── -->
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal-box" style="max-width:500px">
+      <div class="modal-header">
+        <span><i class="fa-solid fa-pen-to-square" style="color:var(--blue)"></i> Edit Requirement</span>
+        <button class="modal-close" onclick="closeEditModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div style="padding:20px; display:flex; flex-direction:column; gap:16px;">
+        <input type="hidden" id="edit-req-index" />
+        <div class="form-group">
+          <label class="form-label">Requirement Text</label>
+          <textarea class="form-select" id="edit-req-text" style="width:100%; height:120px; padding:12px; font-family:inherit; resize:none;"></textarea>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            <select class="form-select" id="edit-req-priority" style="width:100%">
+              <option value="critical">CRITICAL</option>
+              <option value="high">HIGH</option>
+              <option value="medium">MEDIUM</option>
+              <option value="low">LOW</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select class="form-select" id="edit-req-category" style="width:100%">
+              <option value="Security">Security</option>
+              <option value="Functional">Functional</option>
+              <option value="Compliance">Compliance</option>
+              <option value="Performance">Performance</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="rem-actions" style="border-top:1px solid var(--border); padding-top:16px; margin-top:0">
+        <button class="btn-primary" onclick="saveEditReq()"><i class="fa-solid fa-check"></i> Update Requirement</button>
+        <button class="btn-ghost" onclick="closeEditModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TOAST ──────────────────────────────────────────────────── -->
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
