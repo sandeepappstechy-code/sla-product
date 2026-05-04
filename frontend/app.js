@@ -836,7 +836,7 @@ async function performBRDParse(file, text = null) {
   } catch (err) {
     let friendlyMsg = err.message;
     if (err.message === 'Failed to fetch') {
-      friendlyMsg = 'Cannot reach backend — is Laravel running on port 8000?';
+      friendlyMsg = 'Cannot reach backend — is the Python engine running on port 8001?';
     }
     showToast('Parsing failed: ' + friendlyMsg, 'fa-circle-xmark', 'var(--red)');
     resetDropZone();

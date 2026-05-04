@@ -44,6 +44,7 @@ class ExtractedRequirement(BaseModel):
 class RequirementStudioResponse(BaseModel):
     requirements: List[ExtractedRequirement]
     project_summary: str = Field(..., description="One paragraph summary of the project scope")
+    raw_content: str = Field(default="", description="The raw BRD text that was parsed")
 
 SYSTEM_PROMPT = textwrap.dedent("""
     You are the Sentinel Logic Auditor Requirement Studio Agent.
@@ -89,7 +90,9 @@ class RequirementParserAgent:
         
         try:
             data = json.loads(raw_text)
-            return RequirementStudioResponse.model_validate(data)
+            resp = RequirementStudioResponse.model_validate(data)
+            resp.raw_content = brd_text # Populate the raw content
+            return resp
         except Exception as e:
             # Check if it looks like an API key error
             if "Incorrect API key" in raw_text or "sk-placeholder" in os.environ.get("OPENAI_API_KEY", ""):
@@ -124,7 +127,8 @@ class RequirementParserAgent:
                             "category": "Performance",
                             "section_reference": "2.1"
                         }
-                    ]
+                    ],
+                    "raw_content": brd_text
                 }
                 return RequirementStudioResponse.model_validate(mock_data)
             

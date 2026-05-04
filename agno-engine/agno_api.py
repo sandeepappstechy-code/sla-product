@@ -11,19 +11,24 @@ from __future__ import annotations
 import uuid
 import json
 import os
+import io
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import FastAPI, HTTPException, Body, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+
+# Extra parsers
+import PyPDF2
+import docx
 
 from sla_audit_engine import AuditRequest, AuditResult, SLAAuditEngine
 from requirement_parser import RequirementParserAgent, RequirementStudioResponse
 
 app = FastAPI(
     title="SLA Unified Backend",
-    version="2.0.0",
+    version="2.1.0",
     description="Unified API for Audit, Parsing, and State powered by Agno",
 )
 
@@ -40,7 +45,10 @@ DB_FILE = "storage.json"
 def load_db():
     if os.path.exists(DB_FILE):
         with open(DB_FILE, "r") as f:
-            return json.load(f)
+            try:
+                return json.load(f)
+            except:
+                pass
     return {"projects": [], "drifts": [], "requirements": {}}
 
 def save_db(data):
@@ -53,6 +61,27 @@ _db = load_db()
 # Shared engine instances
 _audit_engine = SLAAuditEngine()
 _parser_agent = RequirementParserAgent()
+
+# --- Helpers ---
+
+def extract_text_from_file(file: UploadFile) -> str:
+    filename = file.filename.lower()
+    content = file.file.read()
+    
+    if filename.endswith(".pdf"):
+        pdf_reader = PyPDF2.PdfReader(io.BytesIO(content))
+        text = ""
+        for page in pdf_reader.pages:
+            text += page.extract_text() + "\n"
+        return text
+    
+    elif filename.endswith(".docx"):
+        doc = docx.Document(io.BytesIO(content))
+        return "\n".join([para.text for para in doc.paragraphs])
+    
+    else:
+        # Assume text/markdown
+        return content.decode("utf-8", errors="ignore")
 
 # --- Models ---
 
@@ -84,16 +113,33 @@ async def create_project(project: Project):
     save_db(_db)
     return project
 
-# 2. Requirement Studio (Consolidated)
-class ParseRequest(BaseModel):
-    brd_text: str
-
+# 2. Requirement Studio (Multi-part support for Files)
 @app.post("/requirements/ingest", response_model=RequirementStudioResponse)
-async def parse_requirements(request: ParseRequest) -> RequirementStudioResponse:
+async def parse_requirements(
+    project_uuid: str = Form(...),
+    brd_text: Optional[str] = Form(None),
+    brd_file: Optional[UploadFile] = File(None)
+) -> RequirementStudioResponse:
+    """
+    Parse requirements from either raw text or an uploaded file (PDF, DOCX, TXT).
+    Matches the FormData format sent by the frontend.
+    """
     try:
-        result = _parser_agent.parse(request.brd_text)
+        final_text = ""
+        if brd_file:
+            final_text = extract_text_from_file(brd_file)
+        elif brd_text:
+            final_text = brd_text
+        else:
+            raise HTTPException(status_code=400, detail="Either brd_text or brd_file must be provided.")
+
+        if not final_text.strip():
+            raise HTTPException(status_code=400, detail="Extracted text is empty.")
+
+        result = _parser_agent.parse(final_text)
+        
         # Store for future audits
-        _db["requirements"][str(uuid.uuid4())] = result.dict()
+        _db["requirements"][project_uuid] = result.dict()
         save_db(_db)
         return result
     except Exception as e:
@@ -104,7 +150,6 @@ async def parse_requirements(request: ParseRequest) -> RequirementStudioResponse
 async def audit(request: AuditRequest) -> AuditResult:
     try:
         result = _audit_engine.audit(request)
-        # Store drifts if any
         if result.drifts:
             for drift in result.drifts:
                 drift_entry = drift.dict()
@@ -118,11 +163,9 @@ async def audit(request: AuditRequest) -> AuditResult:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Audit engine error: {str(e)}")
 
-# 4. Webhook Ingestion (Unified)
+# 4. Webhook Ingestion
 @app.post("/webhooks/{project_id}/{tool}")
 async def webhook_ingest(project_id: str, tool: str, payload: WebhookIngest):
-    # Simulate an audit immediately on webhook arrival
-    # In a real app, this would be an async job
     return {
         "status": "received",
         "project_id": project_id,
