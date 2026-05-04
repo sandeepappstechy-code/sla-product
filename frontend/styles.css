@@ -616,7 +616,7 @@ tr:hover {
 .drift-feed {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 24px;
 }
 
 /* ── DRIFT ALERT CARD ───────────────────────────────────────────── */
@@ -642,7 +642,7 @@ tr:hover {
 
 .drift-card.critical::before {
   background: var(--red);
-  box-shadow: 0 0 12px var(--red);
+  box-shadow: 0 0 4px var(--red);
 }
 
 .drift-card.high::before {
@@ -660,7 +660,7 @@ tr:hover {
 .drift-card:hover {
   border-color: var(--border-lt);
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .drift-card-header {
@@ -2205,7 +2205,7 @@ svg.sparkline {
     left: 0 !important;
   }
 
-  .sidebar.mobile-show ~ .sidebar-backdrop {
+  .sidebar.mobile-show~.sidebar-backdrop {
     opacity: 1;
     pointer-events: all;
   }
