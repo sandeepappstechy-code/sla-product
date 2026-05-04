@@ -61,3 +61,10 @@ databases:
     user: sla_admin
     plan: free
 
+staticSites:
+  - name: sla-frontend
+    publishDir: frontend
+    envVars:
+      - key: SLA_BACKEND_URL
+        value: https://sla-backend.onrender.com
+
