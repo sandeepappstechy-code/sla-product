@@ -2,7 +2,7 @@ services:
   # 1. The Frontend (Static Site)
   - type: web
     name: sla-frontend
-    env: static
+    runtime: static
     buildCommand: ""
     staticPublishDir: frontend
     routes:
