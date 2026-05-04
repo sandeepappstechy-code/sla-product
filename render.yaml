@@ -58,8 +58,7 @@ services:
   - type: web
     name: sla-frontend
     env: static
-    rootDir: frontend
-    publishDir: .
+    publishDir: frontend
     envVars:
       - key: SLA_BACKEND_URL
         fromService:
