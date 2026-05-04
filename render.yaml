@@ -56,10 +56,9 @@ services:
           property: password
 
   # 3. The Frontend (Static Site)
-  - type: web
-    env: static
+  - type: static
     name: sla-frontend
-    publishDir: frontend
+    staticPublishDir: frontend
     envVars:
       - key: SLA_BACKEND_URL
         fromService:
