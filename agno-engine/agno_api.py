@@ -65,23 +65,35 @@ _parser_agent = RequirementParserAgent()
 # --- Helpers ---
 
 def extract_text_from_file(file: UploadFile) -> str:
-    filename = file.filename.lower()
-    content = file.file.read()
-    
-    if filename.endswith(".pdf"):
-        pdf_reader = PyPDF2.PdfReader(io.BytesIO(content))
-        text = ""
-        for page in pdf_reader.pages:
-            text += page.extract_text() + "\n"
-        return text
-    
-    elif filename.endswith(".docx"):
-        doc = docx.Document(io.BytesIO(content))
-        return "\n".join([para.text for para in doc.paragraphs])
-    
-    else:
-        # Assume text/markdown
-        return content.decode("utf-8", errors="ignore")
+    try:
+        filename = file.filename.lower()
+        content = file.file.read()
+        
+        if filename.endswith(".pdf"):
+            try:
+                pdf_reader = PyPDF2.PdfReader(io.BytesIO(content))
+                text = ""
+                for page in pdf_reader.pages:
+                    text += page.extract_text() + "\n"
+                return text
+            except Exception as e:
+                raise ValueError(f"Failed to extract PDF text: {str(e)}")
+        
+        elif filename.endswith(".docx"):
+            try:
+                doc = docx.Document(io.BytesIO(content))
+                return "\n".join([para.text for para in doc.paragraphs])
+            except Exception as e:
+                raise ValueError(f"Failed to extract DOCX text: {str(e)}")
+        
+        else:
+            # Assume text/markdown
+            try:
+                return content.decode("utf-8")
+            except:
+                return content.decode("latin-1", errors="ignore")
+    except Exception as e:
+        raise ValueError(f"File reading error: {str(e)}")
 
 # --- Models ---
 

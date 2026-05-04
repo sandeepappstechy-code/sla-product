@@ -3,9 +3,11 @@ services:
   - type: web
     name: sla-backend-unified
     env: python
+    plan: free # Explicitly set to free tier
     rootDir: agno-engine
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn agno_api:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health # Helps Render monitor service readiness
     envVars:
       - key: OPENAI_API_KEY
         sync: false
