@@ -176,7 +176,10 @@ const VIEW_TITLES = {
   settings:    ['Settings',              'Notifications, thresholds & engine config'],
 };
 
-const API_BASE = (window.location.hostname === 'localhost') ? 'http://localhost:8001' : '';
+// Use the local port 8001 for development, or a custom backend URL if provided in localStorage
+const API_BASE = (window.location.hostname === 'localhost') 
+  ? 'http://localhost:8001' 
+  : (localStorage.getItem('sla-backend-url') || '');
 
 function setState(update) {
   state = { ...state, ...update };
@@ -1092,10 +1095,12 @@ function saveSettings() {
     teamsEnabled: document.getElementById('teams-toggle').checked,
     minAlignment: document.getElementById('threshold-score').value,
     similarityAlert: document.getElementById('threshold-similarity').value,
-    autoEscalate: document.getElementById('threshold-escalate').value
+    autoEscalate: document.getElementById('threshold-escalate').value,
+    backendUrl: document.getElementById('settings-backend-url').value.replace(/\/$/, '') // Remove trailing slash
   };
   
   localStorage.setItem('sentinel-settings', JSON.stringify(settings));
+  localStorage.setItem('sla-backend-url', settings.backendUrl);
   showToast('Settings saved successfully!', 'fa-floppy-disk', 'var(--cyan)');
 }
 
@@ -1109,6 +1114,7 @@ function loadSettings() {
       document.getElementById('slack-toggle').checked = settings.slackEnabled;
       document.getElementById('slack-webhook').value = settings.slackWebhook;
       document.getElementById('teams-toggle').checked = settings.teamsEnabled;
+      document.getElementById('settings-backend-url').value = settings.backendUrl || '';
       
       // Update UI for ranges
       if (document.getElementById('threshold-score')) {
