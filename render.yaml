@@ -4,11 +4,11 @@ services:
     name: sla-frontend
     env: static
     buildCommand: ""
-    publishDir: frontend
+    staticPublishDir: frontend
     routes:
       - type: rewrite
-        src: /.*
-        dest: /index.html
+        source: /(.*)
+        destination: /index.html
 
   # 2. The AI Engine (Python/FastAPI)
   - type: web
