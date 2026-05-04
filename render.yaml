@@ -1,8 +1,7 @@
 services:
   # 1. The Frontend (Static Site)
-  - type: web
+  - type: static_site
     name: sla-frontend
-    env: static
     buildCommand: "echo 'No build step required'"
     publishDir: frontend
 
