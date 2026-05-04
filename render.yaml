@@ -1,11 +1,5 @@
 services:
-  # 1. The Frontend (Static Site)
-  - type: static_site
-    name: sla-frontend
-    buildCommand: "echo 'No build step required'"
-    publishDir: frontend
-
-  # 2. The AI Engine (Python/FastAPI)
+  # 1. The AI Engine (Python/FastAPI)
   - type: web
     name: sla-agno-engine
     env: python
@@ -16,7 +10,7 @@ services:
       - key: OPENAI_API_KEY
         sync: false
 
-  # 3. The Backend (Laravel/PHP)
+  # 2. The Backend (Laravel/PHP)
   - type: web
     name: sla-backend
     env: php
