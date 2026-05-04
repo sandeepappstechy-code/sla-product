@@ -55,7 +55,7 @@ services:
           property: password
 
   # 3. The Frontend (Static Site)
-  - type: static
+  - type: web
     name: sla-frontend
     env: static
     rootDir: frontend
@@ -65,7 +65,7 @@ services:
         fromService:
           type: web
           name: sla-backend
-          property: host
+          property: url
 
 databases:
   - name: sla-db
