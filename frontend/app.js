@@ -176,7 +176,7 @@ const VIEW_TITLES = {
   settings:    ['Settings',              'Notifications, thresholds & engine config'],
 };
 
-const API_BASE = (window.location.hostname === 'localhost') ? 'http://localhost:8000' : '';
+const API_BASE = (window.location.hostname === 'localhost') ? 'http://localhost:8001' : '';
 
 function setState(update) {
   state = { ...state, ...update };
@@ -786,7 +786,7 @@ async function performBRDParse(file, text = null) {
   if (text) formData.append('brd_text', text);
 
   try {
-    const response = await fetch(`${API_BASE}/api/requirements/ingest`, {
+    const response = await fetch(`${API_BASE}/requirements/ingest`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json'

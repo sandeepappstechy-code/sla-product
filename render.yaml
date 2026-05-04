@@ -1,7 +1,7 @@
 services:
-  # 1. The AI Engine (Python/FastAPI)
+  # UNIFIED BACKEND (Python/FastAPI) - 100% Free Tier Compatible
   - type: web
-    name: sla-agno-engine
+    name: sla-backend-unified
     env: python
     rootDir: agno-engine
     buildCommand: pip install -r requirements.txt
@@ -9,18 +9,3 @@ services:
     envVars:
       - key: OPENAI_API_KEY
         sync: false
-
-  # 2. The Backend (Laravel/PHP via Docker)
-  - type: web
-    name: sla-backend
-    env: docker # Use Docker for Laravel
-    rootDir: backend
-    plan: free
-    envVars:
-      - key: APP_KEY
-        generateValue: true
-      - key: AGNO_SERVICE_URL
-        fromService:
-          type: web
-          name: sla-agno-engine
-          property: host
