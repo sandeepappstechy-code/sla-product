@@ -56,11 +56,11 @@ services:
           property: password
 
   # 3. The Frontend (Static Site)
-  - type: static
+  - type: web
     name: sla-frontend
     rootDir: frontend
     buildCommand: npm ci && npm run build
-    publishDir: frontend/dist
+    startCommand: npx serve -s frontend/dist --no-cors --single
     envVars:
       - key: SLA_BACKEND_URL
         fromService:
