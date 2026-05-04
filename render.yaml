@@ -1,13 +1,26 @@
 services:
-  # UNIFIED BACKEND (Python/FastAPI) - 100% Free Tier Compatible
+  # 1. The AI Engine (Python/FastAPI)
   - type: web
-    name: sla-backend-unified
+    name: sla-agno-engine
     env: python
-    plan: free # Explicitly set to free tier
     rootDir: agno-engine
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn agno_api:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /health # Helps Render monitor service readiness
     envVars:
       - key: OPENAI_API_KEY
         sync: false
+
+  # 2. The Backend (Laravel/PHP via Docker)
+  - type: web
+    name: sla-backend
+    env: docker
+    rootDir: backend
+    plan: free
+    envVars:
+      - key: APP_KEY
+        generateValue: true
+      - key: AGNO_SERVICE_URL
+        fromService:
+          type: web
+          name: sla-agno-engine
+          property: host
