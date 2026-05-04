@@ -25,7 +25,7 @@ services:
           name: sla-agno-engine
           type: host
 
-staticSites:
+static_sites:
   # 3. The Frontend (Static Dashboard)
   - name: sla-frontend
     buildCommand: ""
