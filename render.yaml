@@ -3,6 +3,7 @@ services:
   - type: web
     name: sla-agno-engine
     env: python
+    plan: free
     rootDir: agno-engine
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn agno_api:app --host 0.0.0.0 --port $PORT
