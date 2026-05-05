@@ -763,7 +763,7 @@ const SAMPLE_REQUIREMENTS = [
   { key: 'REQ-008', text: 'Response payload MUST NOT exceed 10MB per request.',                  status: 'pending' },
 ];
 
-let reqNodes = SAMPLE_REQUIREMENTS.map(r => ({ ...r }));
+let reqNodes = [];
 
 async function performBRDParse(file, text = null) {
   const dz = document.getElementById('drop-zone');

@@ -95,41 +95,7 @@ class RequirementParserAgent:
             return resp
         except Exception as e:
             # Check if it looks like an API key error
-            if "Incorrect API key" in raw_text or "sk-placeholder" in os.environ.get("OPENAI_API_KEY", ""):
-                print("DEBUG: Using mock response due to missing/invalid API key")
-                mock_data = {
-                    "project_summary": "Automated system for verifying user identity and risk profiles during onboarding.",
-                    "requirements": [
-                        {
-                            "node_key": "REQ_001",
-                            "node_label": "User Authentication",
-                            "requirement_text": "The system shall allow users to log in with a secure username and password.",
-                            "requirement_type": "mandatory",
-                            "priority": "high",
-                            "category": "Security",
-                            "section_reference": "1.1"
-                        },
-                        {
-                            "node_key": "REQ_002",
-                            "node_label": "Two-Factor Auth",
-                            "requirement_text": "A second factor (TOTP or SMS) must be required for administrative accounts.",
-                            "requirement_type": "mandatory",
-                            "priority": "critical",
-                            "category": "Security",
-                            "section_reference": "1.2"
-                        },
-                        {
-                            "node_key": "REQ_003",
-                            "node_label": "System Performance",
-                            "requirement_text": "The authentication process shall complete in under 2 seconds for 99% of requests.",
-                            "requirement_type": "optional",
-                            "priority": "medium",
-                            "category": "Performance",
-                            "section_reference": "2.1"
-                        }
-                    ],
-                    "raw_content": brd_text
-                }
-                return RequirementStudioResponse.model_validate(mock_data)
+            if "Incorrect API key" in str(e) or "invalid_api_key" in str(e):
+                raise ValueError("Invalid OpenAI API Key. Please check your Render environment variables.")
             
             raise ValueError(f"Failed to parse requirements: {str(e)}\nRaw Response: {raw_text}")
