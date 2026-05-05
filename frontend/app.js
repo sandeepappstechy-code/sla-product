@@ -767,6 +767,12 @@ let reqNodes = [];
 
 async function performBRDParse(file, text = null) {
   const dz = document.getElementById('drop-zone');
+  const badge = document.getElementById('parse-status-badge');
+  
+  // FORCE CLEAR: Remove all old/static points immediately
+  reqNodes = [];
+  renderReqNodes();
+  
   dz.classList.add('has-file');
   dz.onclick = null; // prevent re-triggering click while parsing
   dz.innerHTML = `<div class="drop-zone-inner"><div class="drop-icon" style="color:var(--cyan)"><i class="fa-solid fa-file-circle-check"></i></div><div class="drop-title">${file ? file.name : 'Raw Text'}</div><div class="drop-sub"><i class="fa-solid fa-spinner fa-spin"></i>&nbsp;Parsing with Agno engine…</div></div>`;
