@@ -887,8 +887,12 @@ function handleFileSelect(input) {
 
 function renderReqNodes() {
   const container = document.getElementById('req-node-list');
+  const countBadge = document.getElementById('req-count-badge');
+  
+  if (countBadge) countBadge.textContent = `${reqNodes.length} found`;
+  
   if (reqNodes.length === 0) {
-    container.innerHTML = '<div style="padding:48px;text-align:center;color:var(--text-3);border:1px dashed var(--border);border-radius:12px">Waiting for BRD ingestion…</div>';
+    container.innerHTML = '<div style="padding:48px;text-align:center;color:var(--text-3);border:1px dashed var(--border);border-radius:12px">No requirements yet. Upload a BRD or click "+ Add" to start.</div>';
     return;
   }
   container.innerHTML = reqNodes.map((r, i) => `
@@ -907,8 +911,30 @@ function renderReqNodes() {
         ${r.status === 'active' ? `<button class="btn-lock" style="background:var(--blue);color:white" onclick="ignoreReq(${i})"><i class="fa-solid fa-ban"></i> Ignore</button>` : ''}
         ${r.status === 'pending' ? `<button onclick="ignoreReq(${i})"><i class="fa-solid fa-eye-slash"></i> Ignore</button>` : ''}
         <button onclick="editReq(${i})"><i class="fa-solid fa-pen"></i> Edit</button>
+        <button class="btn-ghost" style="color:var(--red); border-color:rgba(255,100,100,0.2)" onclick="removeReq(${i})"><i class="fa-solid fa-trash-can"></i></button>
       </div>
     </div>`).join('');
+}
+
+function addNewRequirement() {
+  const newNode = {
+    node_key: `REQ_${String(reqNodes.length + 1).padStart(3, '0')}`,
+    priority: 'medium',
+    requirement_text: 'Enter new requirement details...',
+    category: 'Functional',
+    status: 'pending'
+  };
+  reqNodes.unshift(newNode);
+  renderReqNodes();
+  editReq(0); // Open editor for the new item
+}
+
+function removeReq(i) {
+  if (confirm('Are you sure you want to permanently remove this requirement?')) {
+    reqNodes.splice(i, 1);
+    renderReqNodes();
+    showToast('Requirement deleted', 'fa-trash', 'var(--red)');
+  }
 }
 
 function activateReq(i) { reqNodes[i].status = 'active'; renderReqNodes(); }

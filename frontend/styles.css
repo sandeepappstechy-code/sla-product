@@ -1356,6 +1356,7 @@ tr:hover {
 .req-node-actions {
   display: flex;
   gap: 6px;
+  margin-top: 12px;
 }
 
 .req-node-actions button {

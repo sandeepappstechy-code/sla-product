@@ -262,7 +262,12 @@
         <div class="parse-pane">
           <div class="pane-header">
             <i class="fa-solid fa-list-check"></i> Extracted Requirements
-            <span id="req-count-badge" class="section-badge">0 found</span>
+            <div style="display:flex; gap:8px; align-items:center; margin-left:auto">
+              <span id="req-count-badge" class="section-badge">0 found</span>
+              <button class="btn-ghost" style="font-size:11px; padding:3px 8px; border:1px solid var(--border); border-radius:4px" onclick="addNewRequirement()">
+                <i class="fa-solid fa-plus"></i> Add
+              </button>
+            </div>
           </div>
           <div class="req-node-list" id="req-node-list"></div>
         </div>
