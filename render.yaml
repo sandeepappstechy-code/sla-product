@@ -55,16 +55,18 @@ services:
           property: password
 
 
+  # 3. The Frontend (Static Site)
+  - type: web
+    name: sla-frontend
+    env: static
+    staticPublishPath: frontend
+    envVars:
+      - key: SLA_BACKEND_URL
+        value: https://sla-backend.onrender.com
+
 databases:
   - name: sla-db
     databaseName: sla_audit
     user: sla_admin
     plan: free
-
-staticSites:
-  - name: sla-frontend
-    publishDir: frontend
-    envVars:
-      - key: SLA_BACKEND_URL
-        value: https://sla-backend.onrender.com
 
