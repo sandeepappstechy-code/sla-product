@@ -22,6 +22,7 @@ from typing import Any
 
 from agno.agent import Agent
 from agno.models.google import Gemini
+from agno.models.openai import OpenAIChat
 from agno.tools import tool
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field, field_validator
@@ -309,7 +310,6 @@ class SLAAuditEngine:
             )
             print(f"INFO: Audit Engine using Gemini ({self.model_id})")
         elif openai_key:
-            from agno.models.openai import OpenAIChat
             self.model_id = "gpt-4o"
             self._agent = Agent(
                 model=OpenAIChat(id=self.model_id, api_key=openai_key, temperature=self.temperature),

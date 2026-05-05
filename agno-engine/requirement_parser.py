@@ -14,6 +14,7 @@ from typing import List
 
 from agno.agent import Agent
 from agno.models.google import Gemini
+from agno.models.openai import OpenAIChat
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
@@ -96,7 +97,6 @@ class RequirementParserAgent:
             )
             print("INFO: Initialized Gemini Requirement Parser")
         elif openai_key:
-            from agno.models.openai import OpenAIChat
             self.agent = Agent(
                 model=OpenAIChat(id="gpt-4o", api_key=openai_key),
                 instructions=SYSTEM_PROMPT,
