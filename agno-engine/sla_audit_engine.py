@@ -289,12 +289,15 @@ class SLAAuditEngine:
         google_key = os.environ.get("GOOGLE_API_KEY")
         openai_key = os.environ.get("OPENAI_API_KEY")
         sla_key = os.environ.get("SLA_BACKEND_KEY")
+        sla_secret = os.environ.get("SLA_SECRET_KEY")
 
-        # Smart Routing: Use SLA_BACKEND_KEY if others are missing
-        if not google_key and sla_key and "sk-" not in sla_key:
-            google_key = sla_key
-        if not openai_key and sla_key and "sk-" in sla_key:
-            openai_key = sla_key
+        # Smart Routing: Use SLA_BACKEND_KEY or SLA_SECRET_KEY if others are missing
+        master_key = sla_key or sla_secret
+
+        if not google_key and master_key and "sk-" not in master_key:
+            google_key = master_key
+        if not openai_key and master_key and "sk-" in master_key:
+            openai_key = master_key
 
         if google_key:
             self.model_id = "gemini-1.5-flash"
