@@ -105,7 +105,7 @@ class RequirementParserAgent:
             )
             print("INFO: Initialized OpenAI Requirement Parser")
         else:
-            self.error = "No AI Provider found. Please add GOOGLE_API_KEY or OPENAI_API_KEY to Render."
+            self.error = "No AI Provider found. Please add SLA_SECRET_KEY to Render."
 
     def parse(self, brd_text: str) -> RequirementStudioResponse:
         # Re-check in case environment changed

@@ -131,7 +131,7 @@ async def get_projects():
 
 @app.post("/projects", response_model=Project)
 async def create_project(project: Project):
-    _db["projects"].append(project.dict())
+    _db["projects"].append(project.model_dump())
     save_db(_db)
     return project
 
@@ -180,7 +180,7 @@ async def parse_requirements(
             result = _parser_agent._mechanical_parse(final_text)
         
         # Store for future audits
-        _db["requirements"][project_uuid] = result.dict()
+        _db["requirements"][project_uuid] = result.model_dump()
         save_db(_db)
         return result
     except Exception as e:
@@ -194,7 +194,7 @@ async def audit(request: AuditRequest) -> AuditResult:
         result = _audit_engine.audit(request)
         if result.drifts:
             for drift in result.drifts:
-                drift_entry = drift.dict()
+                drift_entry = drift.model_dump()
                 drift_entry["id"] = str(uuid.uuid4())
                 drift_entry["timestamp"] = datetime.now().isoformat()
                 _db["drifts"].append(drift_entry)
