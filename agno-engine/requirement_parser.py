@@ -149,23 +149,52 @@ class RequirementParserAgent:
 
     def _mechanical_parse(self, text: str) -> RequirementStudioResponse:
         """
-        Regex-based fallback parser that works without any AI keys.
+        Enhanced Regex-based fallback parser with keyword intelligence.
         """
         import re
         lines = text.split('\n')
         requirements = []
-        # Look for sentences containing requirement keywords
-        pattern = re.compile(r'([^.?!]*(?:shall|must|required|should|strictly|prohibited|must not)[^.?!]*[.?!])', re.IGNORECASE)
         
+        # 1. Broad Requirement Pattern (must, shall, etc.)
+        req_pattern = re.compile(r'([^.?!]*(?:shall|must|required|should|strictly|prohibited|must not)[^.?!]*[.?!])', re.IGNORECASE)
+        
+        # 2. Specialized Keyword Patterns
+        special_patterns = {
+            "CMS": re.compile(r'([^.?!]*\bCMS\b[^.?!]*[.?!])', re.IGNORECASE),
+            "Timeline": re.compile(r'([^.?!]*\b(?:Timeline|Deadline|Date|Schedule)\b[^.?!]*[.?!])', re.IGNORECASE),
+            "Out of Scope": re.compile(r'([^.?!]*\b(?:Out Of Scope|Not Responsible|Excluded)\b[^.?!]*[.?!])', re.IGNORECASE)
+        }
+
         found_texts = []
+
+        # Process specialized keywords first
+        for category, pattern in special_patterns.items():
+            for line in lines:
+                matches = pattern.findall(line)
+                for m in matches:
+                    clean_m = m.strip()
+                    if len(clean_m) > 10 and clean_m not in found_texts:
+                        found_texts.append(clean_m)
+                        rtype = RequirementType.CONSTRAINT if "scope" in category.lower() else RequirementType.MANDATORY
+                        requirements.append(ExtractedRequirement(
+                            node_key=f"REQ_{category.replace(' ', '_').upper()}_{len(requirements)+1}",
+                            node_label=f"{category} Requirement",
+                            requirement_text=clean_m,
+                            priority=Priority.HIGH,
+                            category=category,
+                            requirement_type=rtype,
+                            section_reference="Keyword Scan"
+                        ))
+
+        # Fill in with general mandatory requirements
         for line in lines:
-            matches = pattern.findall(line)
+            matches = req_pattern.findall(line)
             for m in matches:
                 clean_m = m.strip()
                 if len(clean_m) > 15 and clean_m not in found_texts:
                     found_texts.append(clean_m)
                     requirements.append(ExtractedRequirement(
-                        node_key=f"REQ_M_{len(requirements)+1:03d}",
+                        node_key=f"REQ_GEN_{len(requirements)+1:03d}",
                         node_label=f"Rule {len(requirements)+1}",
                         requirement_text=clean_m,
                         priority=Priority.HIGH if "must" in clean_m.lower() or "shall" in clean_m.lower() else Priority.MEDIUM,
@@ -174,7 +203,7 @@ class RequirementParserAgent:
                     ))
         
         return RequirementStudioResponse(
-            requirements=requirements[:20], # Limit to 20 for basic scan
-            project_summary="[SAFE MODE] Extracted via Mechanical Regex Scan due to AI Provider unavailability.",
+            requirements=requirements[:30], 
+            project_summary="[SAFE MODE] Extracted via Mechanical Regex Scan with Keyword Intelligence.",
             raw_content=text
         )
