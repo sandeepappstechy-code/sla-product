@@ -110,8 +110,9 @@ class RequirementParserAgent:
             self._init_best_agent()
             
         try:
-            if self.error:
-                raise ValueError(self.error)
+            if self.error or not self.agent:
+                # If no agent or keys, go straight to free mode
+                return self._mechanical_parse(brd_text)
                 
             prompt = f"Analyze and parse the following BRD text into structured requirements:\n\n{brd_text}"
             response = self.agent.run(prompt)
@@ -119,19 +120,28 @@ class RequirementParserAgent:
             raw_text = response.content if hasattr(response, "content") else str(response)
             raw_text = raw_text.strip()
             
+            # If the response contains "quota" or "billing", it's an error from OpenAI
+            if "quota" in raw_text.lower() or "billing" in raw_text.lower() or "limit" in raw_text.lower():
+                print("DEBUG: Quota/Billing error detected in AI response. Switching to Mechanical.")
+                return self._mechanical_parse(brd_text)
+
             # Clean markdown
             if "```json" in raw_text:
                 raw_text = raw_text.split("```json")[1].split("```")[0].strip()
             elif "```" in raw_text:
                 raw_text = raw_text.split("```")[1].split("```")[0].strip()
             
-            data = json.loads(raw_text)
-            resp = RequirementStudioResponse.model_validate(data)
-            resp.raw_content = brd_text
-            return resp
+            try:
+                data = json.loads(raw_text)
+                resp = RequirementStudioResponse.model_validate(data)
+                resp.raw_content = brd_text
+                return resp
+            except:
+                # If JSON parsing fails (e.g. AI returned an error message instead of JSON)
+                return self._mechanical_parse(brd_text)
 
         except Exception as e:
-            print(f"DEBUG: AI Parser Failed ({str(e)}). Falling back to Mechanical Parser.")
+            print(f"DEBUG: AI Parser exception caught: {str(e)}. Falling back to Mechanical Parser.")
             return self._mechanical_parse(brd_text)
 
     def _mechanical_parse(self, text: str) -> RequirementStudioResponse:
