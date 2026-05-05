@@ -173,18 +173,19 @@ async def parse_requirements(
         if not final_text.strip():
             raise HTTPException(status_code=400, detail="Extracted text is empty.")
 
-        result = _parser_agent.parse(final_text)
+        try:
+            result = _parser_agent.parse(final_text)
+        except Exception as e:
+            print(f"WARN: Parser failed ({str(e)}), falling back to mechanical.")
+            result = _parser_agent._mechanical_parse(final_text)
         
         # Store for future audits
         _db["requirements"][project_uuid] = result.dict()
         save_db(_db)
         return result
-    except ValueError as e:
-        if "API Key" in str(e):
-            raise HTTPException(status_code=401, detail=str(e))
-        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Parser error: {str(e)}")
+        # Final safety net for things outside the parser itself
+        raise HTTPException(status_code=500, detail=f"Engine error: {str(e)}")
 
 # 4. Audit Engine
 @app.post("/audit", response_model=AuditResult)
