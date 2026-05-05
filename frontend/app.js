@@ -765,13 +765,15 @@ const SAMPLE_REQUIREMENTS = [
 
 let reqNodes = [];
 
-async function performBRDParse(file, text = null) {
+async function performBRDParse(file, text = null, append = false) {
   const dz = document.getElementById('drop-zone');
   const badge = document.getElementById('parse-status-badge');
   
-  // FORCE CLEAR: Remove all old/static points immediately
-  reqNodes = [];
-  renderReqNodes();
+  if (!append) {
+    reqNodes = [];
+    state.currentRawContent = "";
+    renderReqNodes();
+  }
   
   dz.classList.add('has-file');
   dz.onclick = null; // prevent re-triggering click while parsing
@@ -826,18 +828,25 @@ async function performBRDParse(file, text = null) {
 
     const grid = document.getElementById('studio-parse-grid');
     grid.style.display = 'grid';
-    state.currentRawContent = data.raw_content;
-    document.getElementById('parse-raw-content').textContent = state.currentRawContent;
     
-    reqNodes = data.requirements.map(r => ({
+    const newNodes = data.requirements.map(r => ({
       ...r,
       status: 'pending'
     }));
 
+    if (append) {
+      reqNodes = [...reqNodes, ...newNodes];
+      state.currentRawContent += `\n\n--- ${file ? file.name : 'Next Chunk'} ---\n\n` + data.raw_content;
+    } else {
+      reqNodes = newNodes;
+      state.currentRawContent = data.raw_content;
+    }
+
+    document.getElementById('parse-raw-content').textContent = state.currentRawContent;
     renderReqNodes();
 
     // Update drop zone to show success state
-    dz.innerHTML = `<div class="drop-zone-inner"><div class="drop-icon" style="color:var(--cyan)"><i class="fa-solid fa-file-circle-check"></i></div><div class="drop-title">${file ? file.name : 'Raw Text'}</div><div class="drop-sub" style="color:var(--cyan)"><i class="fa-solid fa-circle-check"></i>&nbsp;${reqNodes.length} requirements extracted</div></div>`;
+    dz.innerHTML = `<div class="drop-zone-inner"><div class="drop-icon" style="color:var(--cyan)"><i class="fa-solid fa-file-circle-check"></i></div><div class="drop-title">${append ? 'Multiple Files' : (file ? file.name : 'Raw Text')}</div><div class="drop-sub" style="color:var(--cyan)"><i class="fa-solid fa-circle-check"></i>&nbsp;${reqNodes.length} total requirements extracted</div></div>`;
 
     const badge = document.getElementById('parse-status-badge');
     badge.className = 'parse-status-badge done';
@@ -887,11 +896,30 @@ function removeBRDFile(e) {
 
 function handleDrop(e) {
   e.preventDefault();
-  const file = e.dataTransfer.files[0];
-  if (file) performBRDParse(file);
+  const files = Array.from(e.dataTransfer.files);
+  if (files.length > 0) processMultipleFiles(files);
 }
+
 function handleFileSelect(input) {
-  if (input.files[0]) performBRDParse(input.files[0]);
+  const files = Array.from(input.files);
+  if (files.length > 0) processMultipleFiles(files);
+}
+
+async function processMultipleFiles(files) {
+  // Clear first for a fresh batch
+  reqNodes = [];
+  state.currentRawContent = "";
+  renderReqNodes();
+
+  for (let i = 0; i < files.length; i++) {
+    const isLast = (i === files.length - 1);
+    try {
+      await performBRDParse(files[i], null, true);
+    } catch (err) {
+      console.error("File processing error:", err);
+      showToast(`Error processing ${files[i].name}`, 'fa-circle-xmark', 'var(--red)');
+    }
+  }
 }
 
 function renderReqNodes() {

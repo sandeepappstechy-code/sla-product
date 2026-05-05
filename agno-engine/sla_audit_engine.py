@@ -288,6 +288,13 @@ class SLAAuditEngine:
     def _init_best_agent(self):
         google_key = os.environ.get("GOOGLE_API_KEY")
         openai_key = os.environ.get("OPENAI_API_KEY")
+        sla_key = os.environ.get("SLA_BACKEND_KEY")
+
+        # Smart Routing: Use SLA_BACKEND_KEY if others are missing
+        if not google_key and sla_key and "sk-" not in sla_key:
+            google_key = sla_key
+        if not openai_key and sla_key and "sk-" in sla_key:
+            openai_key = sla_key
 
         if google_key:
             self.model_id = "gemini-1.5-flash"
