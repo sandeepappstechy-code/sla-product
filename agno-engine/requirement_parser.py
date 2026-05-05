@@ -83,28 +83,37 @@ class RequirementParserAgent:
             self.error = None
 
     def parse(self, brd_text: str) -> RequirementStudioResponse:
-        if self.error:
-            raise ValueError(self.error)
-            
+        # Re-check error state in case environment changed without restart (though unlikely in Render)
+        api_key = os.environ.get("OPENAI_API_KEY")
+        if not api_key or "sk-" not in api_key:
+             raise ValueError("Missing or invalid OpenAI API Key. Please ensure it is set in Render Environment Variables.")
+
+        if not self.agent:
+            # Initialize agent on-demand if it was skipped during __init__
+            self.agent = Agent(
+                model=OpenAIChat(id="gpt-4o", api_key=api_key),
+                instructions=SYSTEM_PROMPT,
+                markdown=False,
+            )
+
         prompt = f"Analyze and parse the following BRD text into structured requirements:\n\n{brd_text}"
         response = self.agent.run(prompt)
         
         raw_text = response.content if hasattr(response, "content") else str(response)
+        raw_text = raw_text.strip()
         
         # Clean markdown if present
-        raw_text = raw_text.strip()
-        if raw_text.startswith("```"):
-            lines = raw_text.split("\n")
-            raw_text = "\n".join(lines[1:-1])
+        if "```json" in raw_text:
+            raw_text = raw_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in raw_text:
+            raw_text = raw_text.split("```")[1].split("```")[0].strip()
         
         try:
             data = json.loads(raw_text)
             resp = RequirementStudioResponse.model_validate(data)
-            resp.raw_content = brd_text # Populate the raw content
+            resp.raw_content = brd_text
             return resp
         except Exception as e:
-            # Check if it looks like an API key error
-            if "Incorrect API key" in str(e) or "invalid_api_key" in str(e):
-                raise ValueError("Invalid OpenAI API Key. Please check your Render environment variables.")
-            
-            raise ValueError(f"Failed to parse requirements: {str(e)}\nRaw Response: {raw_text}")
+            # Return a more descriptive error for the UI
+            snippet = raw_text[:100] + "..." if len(raw_text) > 100 else raw_text
+            raise ValueError(f"AI Parse Error: {str(e)}. Raw Snippet: {snippet}")

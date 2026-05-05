@@ -809,8 +809,9 @@ async function performBRDParse(file, text = null) {
       let msg = `Server Error (HTTP ${response.status})`;
       try {
         const errJson = JSON.parse(rawText);
-        if (errJson.errors) {
-          // Laravel validation errors format
+        if (errJson.detail) {
+          msg = typeof errJson.detail === 'string' ? errJson.detail : JSON.stringify(errJson.detail);
+        } else if (errJson.errors) {
           msg = Object.values(errJson.errors).flat().join(' | ');
         } else {
           msg = errJson.error || errJson.message || msg;
