@@ -14,7 +14,8 @@ let state = {
   drifts: [],
   reqNodes: [],
   isLoading: true,
-  theme: localStorage.getItem('sentinel-theme') || 'dark'
+  theme: localStorage.getItem('sentinel-theme') || 'dark',
+  currentRawContent: ''
 };
 
 function toggleTheme() {
@@ -818,7 +819,8 @@ async function performBRDParse(file, text = null) {
 
     const grid = document.getElementById('studio-parse-grid');
     grid.style.display = 'grid';
-    document.getElementById('parse-raw-content').textContent = data.raw_content;
+    state.currentRawContent = data.raw_content;
+    document.getElementById('parse-raw-content').textContent = state.currentRawContent;
     
     reqNodes = data.requirements.map(r => ({
       ...r,
@@ -896,7 +898,7 @@ function renderReqNodes() {
     return;
   }
   container.innerHTML = reqNodes.map((r, i) => `
-    <div class="req-node ${r.status}" id="req-${i}">
+    <div class="req-node ${r.status}" id="req-${i}" onclick="highlightInBRD('${r.requirement_text.replace(/'/g, "\\'")}')">
       <div class="req-node-top">
         <span class="req-node-key">${r.node_key}</span>
         <span class="badge badge-${r.priority === 'critical' ? 'red' : r.priority === 'high' ? 'amber' : 'blue'}">${r.priority.toUpperCase()}</span>
@@ -906,7 +908,7 @@ function renderReqNodes() {
         <span class="section-badge">${r.category || 'Functional'}</span>
         ${r.section_reference ? `<span class="section-badge">${r.section_reference}</span>` : ''}
       </div>
-      <div class="req-node-actions">
+      <div class="req-node-actions" onclick="event.stopPropagation()">
         ${r.status !== 'active' ? `<button class="btn-confirm" onclick="activateReq(${i})"><i class="fa-solid fa-play"></i> Activate</button>` : ''}
         ${r.status === 'active' ? `<button class="btn-lock" style="background:var(--blue);color:white" onclick="ignoreReq(${i})"><i class="fa-solid fa-ban"></i> Ignore</button>` : ''}
         ${r.status === 'pending' ? `<button onclick="ignoreReq(${i})"><i class="fa-solid fa-eye-slash"></i> Ignore</button>` : ''}
@@ -914,6 +916,39 @@ function renderReqNodes() {
         <button class="btn-ghost" style="color:var(--red); border-color:rgba(255,100,100,0.2)" onclick="removeReq(${i})"><i class="fa-solid fa-trash-can"></i></button>
       </div>
     </div>`).join('');
+}
+
+function highlightInBRD(text) {
+  const container = document.getElementById('parse-raw-content');
+  const source = state.currentRawContent;
+  if (!source) return;
+
+  // Find best match (try whole string first, then chunks)
+  let index = source.toLowerCase().indexOf(text.toLowerCase());
+  let matchedText = text;
+
+  if (index === -1) {
+    // Try first 30 chars if full text doesn't match exactly (due to AI rephrasing)
+    matchedText = text.substring(0, 30);
+    index = source.toLowerCase().indexOf(matchedText.toLowerCase());
+  }
+
+  if (index !== -1) {
+    const before = source.substring(0, index);
+    const match = source.substring(index, index + matchedText.length);
+    const after = source.substring(index + matchedText.length);
+
+    container.innerHTML = `${escapeHTML(before)}<span class="brd-highlight">${escapeHTML(match)}</span>${escapeHTML(after)}`;
+    
+    const el = container.querySelector('.brd-highlight');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+function escapeHTML(str) {
+  const p = document.createElement('p');
+  p.textContent = str;
+  return p.innerHTML;
 }
 
 function addNewRequirement() {

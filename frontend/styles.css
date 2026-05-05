@@ -1324,6 +1324,21 @@ tr:hover {
   white-space: pre-wrap;
 }
 
+.brd-highlight {
+  background: var(--blue-glow);
+  color: var(--text-1);
+  border-bottom: 2px solid var(--blue);
+  border-radius: 2px;
+  padding: 2px 0;
+  transition: all 0.3s ease;
+  animation: highlightPulse 2s infinite alternate;
+}
+
+@keyframes highlightPulse {
+  from { background: rgba(56, 139, 253, 0.15); }
+  to { background: rgba(56, 139, 253, 0.3); }
+}
+
 .req-node-list {
   flex: 1;
   overflow-y: auto;
