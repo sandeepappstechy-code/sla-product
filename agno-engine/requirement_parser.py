@@ -69,14 +69,23 @@ SYSTEM_PROMPT = textwrap.dedent("""
 
 class RequirementParserAgent:
     def __init__(self, model_id: str = "gpt-4o"):
-        self.agent = Agent(
-            model=OpenAIChat(id=model_id, api_key=os.environ["OPENAI_API_KEY"]),
-            instructions=SYSTEM_PROMPT,
-            markdown=False,
-            description="Agent that converts raw BRD text into a structured requirement graph."
-        )
+        api_key = os.environ.get("OPENAI_API_KEY")
+        if not api_key or "sk-" not in api_key:
+            self.agent = None
+            self.error = "Missing or invalid OpenAI API Key in environment."
+        else:
+            self.agent = Agent(
+                model=OpenAIChat(id=model_id, api_key=api_key),
+                instructions=SYSTEM_PROMPT,
+                markdown=False,
+                description="Agent that converts raw BRD text into a structured requirement graph."
+            )
+            self.error = None
 
     def parse(self, brd_text: str) -> RequirementStudioResponse:
+        if self.error:
+            raise ValueError(self.error)
+            
         prompt = f"Analyze and parse the following BRD text into structured requirements:\n\n{brd_text}"
         response = self.agent.run(prompt)
         

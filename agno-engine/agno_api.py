@@ -179,6 +179,10 @@ async def parse_requirements(
         _db["requirements"][project_uuid] = result.dict()
         save_db(_db)
         return result
+    except ValueError as e:
+        if "API Key" in str(e):
+            raise HTTPException(status_code=401, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Parser error: {str(e)}")
 
