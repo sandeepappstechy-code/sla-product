@@ -50,22 +50,23 @@ class RequirementStudioResponse(BaseModel):
 SYSTEM_PROMPT = textwrap.dedent("""
     You are the Sentinel Logic Auditor Requirement Studio Agent.
     Your task is to analyze raw Business Requirement Documents (BRDs) and decompose them 
-    into a structured set of atomic requirements that can be used for logic auditing.
+    into structured requirements based on standard enterprise sections:
+
+    ## Required Sections to Identify:
+    - Executive Summary & Business Objectives
+    - Project Scope (In-Scope / Out-of-Scope)
+    - Stakeholders & Business/Functional/Non-Functional Requirements
+    - User Stories, Assumptions, Constraints, & Dependencies
+    - Risks, Acceptance Criteria, & Timeline / Milestones
+    - Budget, Success Metrics / KPIs, & Communication Plan
+    - Approval & Sign-Off
 
     ## Extraction Rules
-    - node_key: Create a unique, underscore-separated slug for each requirement.
-    - node_label: A concise title (max 60 chars).
-    - requirement_text: Capture the full nuance of the requirement.
-    - section_reference: Extract section headers or numbers (e.g., §3.1).
-    - category: Classify as 'Compliance', 'Functional', or 'Security'.
-    - priority: Assign based on business impact.
+    - node_key: Create a unique, underscore-separated slug.
+    - node_label: Use the Section Name as a prefix (e.g. 'Risk: Data Leakage').
+    - requirement_text: Capture the full nuance.
+    - requirement_type: Use CONSTRAINT for Out-of-Scope/Risks, MANDATORY for others.
 
-    ## Classification Guide
-    - MANDATORY: Use for MUST/REQUIRED statements.
-    - CONSTRAINT: Use for MUST NOT/PROHIBITED statements.
-    - CONDITIONAL: Use for IF/THEN logic.
-
-    Return ONLY a valid JSON object matching the RequirementStudioResponse schema.
 """).strip()
 
 class RequirementParserAgent:
@@ -158,11 +159,16 @@ class RequirementParserAgent:
         # 1. Broad Requirement Pattern (must, shall, etc.)
         req_pattern = re.compile(r'([^.?!]*(?:shall|must|required|should|strictly|prohibited|must not)[^.?!]*[.?!])', re.IGNORECASE)
         
-        # 2. Specialized Keyword Patterns
+        # 2. Comprehensive Enterprise Keyword Patterns
         special_patterns = {
-            "CMS": re.compile(r'([^.?!]*\bCMS\b[^.?!]*[.?!])', re.IGNORECASE),
-            "Timeline": re.compile(r'([^.?!]*\b(?:Timeline|Deadline|Date|Schedule)\b[^.?!]*[.?!])', re.IGNORECASE),
-            "Out of Scope": re.compile(r'([^.?!]*\b(?:Out Of Scope|Not Responsible|Excluded)\b[^.?!]*[.?!])', re.IGNORECASE)
+            "Objective": re.compile(r'([^.?!]*\b(?:Objective|Goal|Success Metric|KPI)\b[^.?!]*[.?!])', re.IGNORECASE),
+            "Scope": re.compile(r'([^.?!]*\b(?:Scope|In-Scope|Out-of-Scope|Exclude)\b[^.?!]*[.?!])', re.IGNORECASE),
+            "Stakeholder": re.compile(r'([^.?!]*\b(?:Stakeholder|Owner|User|Actor)\b[^.?!]*[.?!])', re.IGNORECASE),
+            "Requirements": re.compile(r'([^.?!]*\b(?:Functional|Non-Functional|Technical) Requirement\b[^.?!]*[.?!])', re.IGNORECASE),
+            "Timeline": re.compile(r'([^.?!]*\b(?:Timeline|Milestone|Deadline|Schedule)\b[^.?!]*[.?!])', re.IGNORECASE),
+            "Risks": re.compile(r'([^.?!]*\b(?:Risk|Assumption|Constraint|Dependency)\b[^.?!]*[.?!])', re.IGNORECASE),
+            "Finance": re.compile(r'([^.?!]*\b(?:Budget|Cost|Funding)\b[^.?!]*[.?!])', re.IGNORECASE),
+            "Sign-Off": re.compile(r'([^.?!]*\b(?:Approval|Sign-Off|Communication Plan)\b[^.?!]*[.?!])', re.IGNORECASE)
         }
 
         found_texts = []
