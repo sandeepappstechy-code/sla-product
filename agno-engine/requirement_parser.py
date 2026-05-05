@@ -13,7 +13,7 @@ from enum import Enum
 from typing import List
 
 from agno.agent import Agent
-from agno.models.openai import OpenAIChat
+from agno.models.google import Gemini
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
@@ -68,34 +68,43 @@ SYSTEM_PROMPT = textwrap.dedent("""
 """).strip()
 
 class RequirementParserAgent:
-    def __init__(self, model_id: str = "gpt-4o"):
-        api_key = os.environ.get("OPENAI_API_KEY")
-        if not api_key or "sk-" not in api_key:
-            self.agent = None
-            self.error = "Missing or invalid OpenAI API Key in environment."
-        else:
+    def __init__(self):
+        self.agent = None
+        self.error = None
+        self._init_best_agent()
+
+    def _init_best_agent(self):
+        google_key = os.environ.get("GOOGLE_API_KEY")
+        openai_key = os.environ.get("OPENAI_API_KEY")
+
+        if google_key:
             self.agent = Agent(
-                model=OpenAIChat(id=model_id, api_key=api_key),
+                model=Gemini(id="gemini-1.5-flash", api_key=google_key),
                 instructions=SYSTEM_PROMPT,
                 markdown=False,
-                description="Agent that converts raw BRD text into a structured requirement graph."
+                description="Requirement Studio Agent (Powered by Gemini)"
             )
-            self.error = None
+            print("INFO: Initialized Gemini Requirement Parser")
+        elif openai_key:
+            from agno.models.openai import OpenAIChat
+            self.agent = Agent(
+                model=OpenAIChat(id="gpt-4o", api_key=openai_key),
+                instructions=SYSTEM_PROMPT,
+                markdown=False,
+                description="Requirement Studio Agent (Powered by OpenAI)"
+            )
+            print("INFO: Initialized OpenAI Requirement Parser")
+        else:
+            self.error = "No AI Provider found. Please add GOOGLE_API_KEY or OPENAI_API_KEY to Render."
 
     def parse(self, brd_text: str) -> RequirementStudioResponse:
-        # Re-check error state in case environment changed without restart (though unlikely in Render)
-        api_key = os.environ.get("OPENAI_API_KEY")
-        if not api_key or "sk-" not in api_key:
-             raise ValueError("Missing or invalid OpenAI API Key. Please ensure it is set in Render Environment Variables.")
-
+        # Re-check in case environment changed
         if not self.agent:
-            # Initialize agent on-demand if it was skipped during __init__
-            self.agent = Agent(
-                model=OpenAIChat(id="gpt-4o", api_key=api_key),
-                instructions=SYSTEM_PROMPT,
-                markdown=False,
-            )
-
+            self._init_best_agent()
+            
+        if self.error:
+            raise ValueError(self.error)
+            
         prompt = f"Analyze and parse the following BRD text into structured requirements:\n\n{brd_text}"
         response = self.agent.run(prompt)
         

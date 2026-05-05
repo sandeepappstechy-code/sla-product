@@ -21,7 +21,7 @@ from enum import Enum
 from typing import Any
 
 from agno.agent import Agent
-from agno.models.openai import OpenAIChat
+from agno.models.google import Gemini
 from agno.tools import tool
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field, field_validator
@@ -275,30 +275,41 @@ AUDIT_SYSTEM_PROMPT = textwrap.dedent("""
 class SLAAuditEngine:
     """
     Wraps an Agno Agent to perform Semantic Drift Detection audits.
-    Designed to be instantiated once and reused across requests.
+    Supports Hybrid AI models (Gemini or OpenAI fallback).
     """
 
-    def __init__(
-        self,
-        model_id: str = "gpt-4o",
-        temperature: float = 0.1,  # Low temperature for deterministic auditing
-    ) -> None:
-        self.model_id = model_id
-        self._agent = Agent(
-            model=OpenAIChat(
-                id=model_id,
-                api_key=os.environ["OPENAI_API_KEY"],
-                temperature=temperature,
-            ),
-            tools=[
-                parse_brd_requirements,
-                parse_execution_path,
-                compute_semantic_similarity,
-                calculate_alignment_score,
-            ],
-            instructions=AUDIT_SYSTEM_PROMPT,
-            markdown=False,
-        )
+    def __init__(self, temperature: float = 0.1) -> None:
+        self.temperature = temperature
+        self._agent = None
+        self.error = None
+        self.model_id = "unknown"
+        self._init_best_agent()
+
+    def _init_best_agent(self):
+        google_key = os.environ.get("GOOGLE_API_KEY")
+        openai_key = os.environ.get("OPENAI_API_KEY")
+
+        if google_key:
+            self.model_id = "gemini-1.5-flash"
+            self._agent = Agent(
+                model=Gemini(id=self.model_id, api_key=google_key, temperature=self.temperature),
+                tools=[parse_brd_requirements, parse_execution_path, compute_semantic_similarity, calculate_alignment_score],
+                instructions=AUDIT_SYSTEM_PROMPT,
+                markdown=False,
+            )
+            print(f"INFO: Audit Engine using Gemini ({self.model_id})")
+        elif openai_key:
+            from agno.models.openai import OpenAIChat
+            self.model_id = "gpt-4o"
+            self._agent = Agent(
+                model=OpenAIChat(id=self.model_id, api_key=openai_key, temperature=self.temperature),
+                tools=[parse_brd_requirements, parse_execution_path, compute_semantic_similarity, calculate_alignment_score],
+                instructions=AUDIT_SYSTEM_PROMPT,
+                markdown=False,
+            )
+            print(f"INFO: Audit Engine using OpenAI ({self.model_id})")
+        else:
+            self.error = "No AI Provider found for Audit Engine."
 
     def _build_audit_prompt(self, request: AuditRequest) -> str:
         return textwrap.dedent(f"""
@@ -350,16 +361,13 @@ class SLAAuditEngine:
     def audit(self, request: AuditRequest) -> AuditResult:
         """
         Runs a synchronous Semantic Drift Detection audit.
-
-        Args:
-            request: AuditRequest containing BRD and execution data
-
-        Returns:
-            AuditResult with detected drifts and alignment score
-
-        Raises:
-            ValueError: If the LLM response cannot be parsed into AuditResult
         """
+        if not self._agent:
+            self._init_best_agent()
+        
+        if self.error:
+            raise ValueError(self.error)
+
         prompt = self._build_audit_prompt(request)
         response = self._agent.run(prompt)
 
