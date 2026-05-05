@@ -12,47 +12,7 @@ services:
       - key: AGNO_LOG_LEVEL
         value: INFO
 
-  # 2. The Backend (Laravel/PHP via Docker)
-  - type: web
-    name: sla-backend
-    env: docker
-    rootDir: backend
-    plan: free
-    envVars:
-      - key: APP_KEY
-        generateValue: true
-      - key: APP_ENV
-        value: production
-      - key: APP_DEBUG
-        value: "false"
-      - key: SLA_AGNO_SERVICE_URL
-        fromService:
-          type: web
-          name: sla-agno-engine
-          property: host
-      # Database connection
-      - key: DB_CONNECTION
-        value: pgsql
-      - key: DB_HOST
-        fromDatabase:
-          name: sla-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: sla-db
-          property: port
-      - key: DB_DATABASE
-        fromDatabase:
-          name: sla-db
-          property: database
-      - key: DB_USERNAME
-        fromDatabase:
-          name: sla-db
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: sla-db
-          property: password
+
 
 
   # 3. The Frontend (Static Site)
@@ -62,11 +22,5 @@ services:
     staticPublishPath: frontend
     envVars:
       - key: SLA_BACKEND_URL
-        value: https://sla-backend.onrender.com
-
-databases:
-  - name: sla-db
-    databaseName: sla_audit
-    user: sla_admin
-    plan: free
+        value: https://sla-agno-engine.onrender.com
 

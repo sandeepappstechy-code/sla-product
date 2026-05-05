@@ -178,7 +178,7 @@ const VIEW_TITLES = {
 
 // Use the local port 8000 for development, or a custom backend URL if provided in localStorage
 const API_BASE = (window.location.hostname === 'localhost') 
-  ? 'http://localhost:8000' 
+  ? 'http://localhost:8001' 
   : (localStorage.getItem('sla-backend-url') || '');
 
 function setState(update) {
@@ -789,7 +789,7 @@ async function performBRDParse(file, text = null) {
   if (text) formData.append('brd_text', text);
 
   try {
-    const response = await fetch(`${API_BASE}/api/requirements/ingest`, {
+    const response = await fetch(`${API_BASE}/requirements/ingest`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json'
