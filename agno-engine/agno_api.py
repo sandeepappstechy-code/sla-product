@@ -110,6 +110,16 @@ class WebhookIngest(BaseModel):
 
 # --- Routes ---
 
+@app.get("/")
+def root():
+    return {
+        "message": "Welcome to the Sentinel Logic Auditor (SLA) Unified Backend",
+        "version": "2.1.0",
+        "docs": "/docs",
+        "health": "/health",
+        "status": "Online"
+    }
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "sla-unified-backend", "time": datetime.now(timezone.utc).isoformat()}
