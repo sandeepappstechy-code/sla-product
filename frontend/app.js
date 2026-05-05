@@ -179,7 +179,7 @@ const VIEW_TITLES = {
 // Use the local port 8000 for development, or a custom backend URL if provided in localStorage
 const API_BASE = (window.location.hostname === 'localhost') 
   ? 'http://localhost:8001' 
-  : (localStorage.getItem('sla-backend-url') || '');
+  : (localStorage.getItem('sla-backend-url') || 'https://sla-agno-engine.onrender.com');
 
 function setState(update) {
   state = { ...state, ...update };
